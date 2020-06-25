@@ -31,16 +31,15 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
-     windows-scripts
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     helm
-     ;; auto-completion
      ;; better-defaults
+     auto-completion
      emacs-lisp
+     helm
      git
      markdown
      org
@@ -48,8 +47,9 @@ values."
      c-c++
      csharp
      python
+     windows-scripts
+     javascript
      themes-megapack
-     pdf-tools
      org-roam
      ;; (shell :variables
      ;;        shell-default-height 30
@@ -62,18 +62,7 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '(gruvbox-theme
-                                      org-ref
-                                      org-noter
-                                      org-roam
-                                      org-roam-bibtex
-                                      org-wc
-                                      writeroom-mode
-                                      org-noter-pdftools
-                                      org-pdftools
-                                      helm-swoop
-                                      helm-wikipedia)
-
+   dotspacemacs-additional-packages '()
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
@@ -152,8 +141,8 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Iosevka"
-                               :size 22
+   dotspacemacs-default-font '("Iosevka Fixed"
+                               :size 24
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -288,7 +277,7 @@ values."
    dotspacemacs-smartparens-strict-mode nil
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc…
-   ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
+   ;; This can be temporary disabled by pressing `C- bdbefore `)'. (default nil)
    dotspacemacs-smart-closing-parenthesis nil
    ;; Select a scope to highlight delimiters. Possible values are `any',
    ;; `current', `all' or `nil'. Default is `all' (highlight any scope and
@@ -320,8 +309,6 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
-  (load-file "c:/Users/asaxp/AppData/Roaming/.emacs.d/elpa/dash-20200426.2244/dash.el")
-  (load-file "c:/Users/asaxp/AppData/Roaming/.emacs.d/elpa/autothemer-20180920.923/autothemer.el")
   )
 
 (defun dotspacemacs/user-config ()
@@ -332,17 +319,42 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
+  (setq-default auto-fill-function 'do-auto-fill)
+
   (setq display-time-format "%a,%d %b %Y %H:%M:%S")
-  (define-key isearch-mode-map (kbd "M-s o") 'helm-occur-from-isearch)
   (display-time-mode 1)
-  (with-eval-after-load 'org
+
+  (with-eval-after-load 'org-mode
+    ;; Spacemacs has odd org interaction, due to two versions of org being used.
+    ;; Thus, we have to make sure that our custom configuration is loaded after
+    ;; org is completely loaded.
+
+    ;; org-projectile configuration
+    (use-package org-projectile
+      :bind (("C-c n p" . org-projectile-project-todo-completing-read)
+             ("C-c c" . org-capture))
+      :config
+      (progn
+        (setq org-agenda-files (append org-agenda-files (org-projectile-todo-files)))
+        (push (org-projectile-project-todo-entry) org-capture-templates))
+      :ensure t)
+    (org-projectile-per-project)
+    (setq org-projectile-per-project-filepath "todo.org")
+
+    ;; Agenda file setup. Make sure org-projectile project files are added. 
+    (setq org-agenda-files '("c:/Users/jacbaile/OneDrive/Org/"))
+    (setq org-agenda-files (append org-agenda-files
+                                   (org-projectile-todo-files)))
+
+    ;; I actually forget what this one does.
     (setq org-log-done t)
-    (setq org-agenda-files '("c:/Users/asaxp/Google Drive/Org/"))
+
+    ;; Refile targets. Set the default places we can throw org headings to. 
     (setq org-refile-targets
           '((org-agenda-files :maxlevel . 3)))
     (setq org-default-notes-file (expand-file-name "~/Org/notes.org"))
 
-                                        ; Make Org mode show the scheduled tasks two weeks before their deadlines.
+    ;; Make Org mode show the scheduled tasks two weeks before their deadlines.
     (setq org-deadline-warning-days 14)
     (setq org-todo-keywords
           '((sequence "TODO(t)" "|" "DONE(d)" "CANCELLED(c)")
@@ -359,6 +371,8 @@ you should place your code here."
 
     ;; Custom number of days for org agenda views
     (setq org-agenda-span 28)
+
+    ;; A little trick to get agenda to show graphically how we like.
     (defadvice org-agenda (around split-vertically activate)
       (let ((split-width-threshold 80))  ; or whatever width makes sense for you
         ad-do-it))
@@ -373,22 +387,32 @@ you should place your code here."
 
     (add-hook 'org-open-link-functions 'org-pass-link-to-system)
 
+    ;; TODO: These need to be updated for spacemacs bindings. Maybe they're
+    ;; already there!
     (define-key global-map "\C-cl" 'org-store-link)
     (define-key global-map "\C-ca" 'org-agenda)
     (define-key global-map "\C-cc" 'org-capture)
     (define-key global-map "\C-cb" 'org-iswitchb)
 
+    ;; This is my custom timestamp function. Basically, it's a hack that mimics
+    ;; the universal prefix argument, then calls the normal org-time-stamp
+    ;; function. Saves me a few keystrokes and a little bit of time.
     (defun force-timestamp ()
       (interactive)
       (setq current-prefix-arg '(16))
       (call-interactively 'org-time-stamp))
 
     (global-set-key (kbd "C-c C-.") 'force-timestamp)
+
+    ;; This is a hack to get summaries of headings in searches for tag view and
+    ;; such. Don't use it much anymore, might remove.
     (setq org-agenda-entry-text-maxlines '3)
     (add-to-list
      'org-structure-template-alist
      '("d" . "definition"))
 
+    ;; Finally, my long list of org structure templates. These are super useful
+    ;; when live-texing notes, especially those of a mathematical nature.
     (add-to-list
      'org-structure-template-alist
      '("Q" . "question"))
@@ -405,8 +429,6 @@ you should place your code here."
      'org-structure-template-alist
      '("L" . "lemma"))
     )
-
-
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -416,13 +438,14 @@ you should place your code here."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-roam-directory "C:\\Users\\asaxp\\OneDrive\\Org\\Slipbox\\" nil nil "Customized with use-package org-roam")
+ '(evil-want-Y-yank-to-eol nil)
+ '(org-roam-directory "C:\\Users\\jacbaile\\OneDrive\\Org\\SlipBox" nil nil "Customized with use-package org-roam")
  '(package-selected-packages
    (quote
-    (emacsql-sqlite3 helm-wikipedia powershell org-pdftools org-noter org-noter-pdftools writeroom-mode org-ref org-roam org-roam-bibtex org-sidebar org-wc gruvbox-dark-theme zenburn-theme zen-and-art-theme white-sand-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme seti-theme reverse-theme rebecca-theme railscasts-theme purple-haze-theme professional-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mustang-theme monokai-theme monochrome-theme molokai-theme moe-theme minimal-theme material-theme majapahit-theme madhat2r-theme lush-theme light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme farmhouse-theme exotica-theme espresso-theme dracula-theme django-theme darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes afternoon-theme yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode dash-functional helm-pydoc cython-mode anaconda-mode pythonic smeargle orgit org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download omnisharp auto-complete flycheck mmm-mode markdown-toc markdown-mode magit-gitflow magit-popup htmlize helm-gitignore gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md evil-magit magit git-commit with-editor transient disaster csharp-mode cmake-mode clj-refactor inflections multiple-cursors paredit yasnippet clang-format cider-eval-sexp-fu cider sesman queue parseedn clojure-mode parseclj a ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hydra lv hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation helm-themes helm-swoop helm-projectile projectile pkg-info epl helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist highlight evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu elisp-slime-nav dumb-jump f dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async))))
+    (yapfify pyvenv pytest pyenv-mode py-isort pip-requirements live-py-mode hy-mode dash-functional helm-pydoc helm-company helm-c-yasnippet fuzzy cython-mode company-statistics company-c-headers company-anaconda company clojure-snippets clj-refactor inflections paredit cider-eval-sexp-fu cider sesman queue parseedn clojure-mode parseclj a auto-yasnippet anaconda-mode pythonic ac-ispell emacsql-sqlite zenburn-theme zen-and-art-theme white-sand-theme web-beautify underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle seti-theme reverse-theme rebecca-theme railscasts-theme purple-haze-theme professional-theme powershell planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme orgit organic-green-theme org-roam emacsql-sqlite3 emacsql org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download omtose-phellack-theme omnisharp auto-complete flycheck oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mustang-theme monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-toc markdown-mode majapahit-theme magit-gitflow magit-popup madhat2r-theme lush-theme livid-mode skewer-mode simple-httpd light-soap-theme json-mode json-snatcher json-reformat js2-refactor yasnippet multiple-cursors js2-mode js-doc jbeans-theme jazz-theme ir-black-theme inkpot-theme htmlize heroku-theme hemisu-theme helm-gitignore hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md gandalf-theme flatui-theme flatland-theme farmhouse-theme exotica-theme evil-magit magit git-commit with-editor transient espresso-theme dracula-theme django-theme disaster darktooth-theme autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme csharp-mode color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized coffee-mode cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes afternoon-theme ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hydra lv hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation helm-themes helm-swoop helm-projectile projectile pkg-info epl helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired f evil-tutor evil-surround evil-search-highlight-persist highlight evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg undo-tree eval-sexp-fu elisp-slime-nav dumb-jump dash s diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line helm avy helm-core popup async))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((((class color) (min-colors 16777215)) (:background "#282828" :foreground "#fdf4c1")) (((class color) (min-colors 255)) (:background "#262626" :foreground "#ffffaf")))))
+ '(default ((t (:background nil)))))
