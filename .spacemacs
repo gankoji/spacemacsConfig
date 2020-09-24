@@ -49,8 +49,6 @@ values."
      python
      windows-scripts
      javascript
-     themes-megapack
-     org-roam
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
