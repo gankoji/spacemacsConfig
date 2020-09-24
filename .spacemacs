@@ -38,17 +38,17 @@ values."
      ;; ----------------------------------------------------------------
      ;; better-defaults
      auto-completion
-     emacs-lisp
-     helm
-     git
-     markdown
-     org
      clojure
      c-c++
      csharp
+     emacs-lisp
+     git
+     helm
+     javascript
+     markdown
+     org
      python
      windows-scripts
-     javascript
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
