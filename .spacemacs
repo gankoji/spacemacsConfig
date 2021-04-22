@@ -131,9 +131,7 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Iosevka"
-                               :size 28.
-                               :weight normal
-                               :width normal)
+                               :size 32.)
 
    dotspacemacs-mode-line-theme 'spacemacs
    ;; The leader key
@@ -289,7 +287,7 @@ values."
    ;; `trailing' to delete only the whitespace at end of lines, `changed'to
    ;; delete only whitespace for changed lines or `nil' to disable cleanup.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup trailing
+   dotspacemacs-whitespace-cleanup 'trailing
    ))
 
 (defun dotspacemacs/user-init ()
@@ -300,7 +298,6 @@ executes.
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
   (setq fsharp-backend 'lsp)
-  ;;(setq dired-quick-sort-suppress-setup-warning t)
   )
 
 (defun dotspacemacs/user-config ()
@@ -324,18 +321,34 @@ you should place your code here."
     (insert (concat "[[" (file-name-sans-extension (file-relative-name
                                                     filename)) "]]")))
 
-  (defun rename-file-in-vault (regex subs)
-    (interactive "sWhat file should be renamed:
-sWhat should it be named: " )
-    (let ((cmdStr
+  (defun filename-in-vault (filename)
+    (message "%s" filename)
+    (let* ((vault "/Users/jbailey/Documents/slipbox/")
+           (extensionless (file-name-sans-extension filename))
+           (stripped (replace-regexp-in-string vault "" extensionless)))
+      (message "Stripped: %s" stripped)
+      stripped
+      ))
+
+  (defun rename-file-in-vault (filename &optional args)
+    (interactive "*FNew file name: \nP" )
+    (let* ((currentFile (filename-in-vault (buffer-file-name)))
+           (subs (filename-in-vault filename))
+          (cmdStr
            (format
-            "/Users/jbailey/Documents/slipbox/note-relinker.py \"%s\" \"%s\"" regex subs)))
-      (shell-command cmdStr)))
+            "/Users/jbailey/Documents/slipbox/note-relinker.py \"%s\" \"%s\""
+            (concat "[[" currentFile "]]") (concat "[[" subs "]]"))))
+      (shell-command cmdStr)
+      (message "Command string: %s" cmdStr)
+      (rename-file (buffer-file-name) filename)
+      ))
 
   (with-eval-after-load 'markdown-mode
     (define-key markdown-mode-map (kbd "C-c i") 'insert-file-name-as-wikilink)
     (spacemacs/declare-prefix "o" "jakes-menu")
-    (spacemacs/set-leader-keys "ol" 'insert-file-name-as-wikilink))
+    (spacemacs/set-leader-keys "ol" 'insert-file-name-as-wikilink)
+    (spacemacs/set-leader-keys "of" 'markdown-follow-thing-at-point)
+    (spacemacs/set-leader-keys "or" 'rename-file-in-vault))
 
   ;; This function automatically adds my vault files to the staging area
   ;; commits them, and pushes to the remote
@@ -362,42 +375,6 @@ sWhat should it be named: " )
       :ensure t)
     (org-projectile-per-project)
     (setq org-projectile-per-project-filepath "todo.org")
-
-    ;; Agenda file setup. Make sure org-projectile project files are added. 
-    (setq org-agenda-files '("c:/Users/jacbaile/OneDrive/Org/"))
-    (setq org-agenda-files (append org-agenda-files
-                                   (org-projectile-todo-files)))
-
-    ;; I actually forget what this one does.
-    (setq org-log-done t)
-
-    ;; Refile targets. Set the default places we can throw org headings to. 
-    (setq org-refile-targets
-          '((org-agenda-files :maxlevel . 3)))
-    (setq org-default-notes-file (expand-file-name "~/Org/notes.org"))
-
-    ;; Make Org mode show the scheduled tasks two weeks before their deadlines.
-    (setq org-deadline-warning-days 14)
-    (setq org-todo-keywords
-          '((sequence "TODO(t)" "|" "DONE(d)" "CANCELLED(c)")
-            (sequence "TASK(f)" "|" "DONE(d)")
-            (sequence "MAYBE(m)" "|" "CANCELLED(c)")))
-
-    ;; It helps to distinguish them by color, like this:
-    (setq org-todo-keyword-faces
-          '(("TODO" . (:foreground "DarkOrange1" :weight bold))
-            ("MAYBE" . (:foreground "sea green"))
-            ("DONE" . (:foreground "light sea green"))
-            ("CANCELLED" . (:foreground "forest green"))
-            ("TASK" . (:foreground "light blue"))))
-
-    ;; Custom number of days for org agenda views
-    (setq org-agenda-span 28)
-
-    ;; A little trick to get agenda to show graphically how we like.
-    (defadvice org-agenda (around split-vertically activate)
-      (let ((split-width-threshold 80))  ; or whatever width makes sense for you
-        ad-do-it))
 
     ;; This forces links that org doesn't know how to handle to be handled
     ;; natively
@@ -429,12 +406,12 @@ sWhat should it be named: " )
     ;; This is a hack to get summaries of headings in searches for tag view and
     ;; such. Don't use it much anymore, might remove.
     (setq org-agenda-entry-text-maxlines '3)
+    ;; Finally, my long list of org structure templates. These are super useful
+    ;; when live-texing notes, especially those of a mathematical nature.
     (add-to-list
      'org-structure-template-alist
      '("d" . "definition"))
 
-    ;; Finally, my long list of org structure templates. These are super useful
-    ;; when live-texing notes, especially those of a mathematical nature.
     (add-to-list
      'org-structure-template-alist
      '("Q" . "question"))
@@ -462,7 +439,6 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(compile-command "dotnet run")
  '(dired-quick-sort-suppress-setup-warning ''message)
  '(dired-use-ls-dired nil)
  '(evil-want-Y-yank-to-eol nil)
@@ -471,10 +447,4 @@ This function is called at the very end of Spacemacs initialization."
  '(package-selected-packages
    '(mmm-mode markdown-toc gh-md deft eglot-fsharp zenburn-theme zen-and-art-theme white-sand-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme seti-theme reverse-theme rebecca-theme railscasts-theme purple-haze-theme professional-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mustang-theme monokai-theme monochrome-theme molokai-theme moe-theme modus-vivendi-theme modus-operandi-theme modus-themes minimal-theme material-theme majapahit-theme madhat2r-theme lush-theme light-soap-theme kaolin-themes jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme farmhouse-theme eziam-theme exotica-theme espresso-theme dracula-theme doom-themes django-theme darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme chocolate-theme autothemer cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes afternoon-theme fsharp-mode yasnippet-snippets yapfify ws-butler writeroom-mode winum which-key web-beautify volatile-highlights vi-tilde-fringe uuidgen use-package unfill undo-tree treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection sphinx-doc spaceline-all-the-icons smeargle restart-emacs rainbow-delimiters pytest pyenv-mode py-isort prettier-js powershell popwin poetry pippel pipenv pip-requirements pcre2el password-generator paradox overseer orgit org-superstar org-rich-yank org-projectile org-present org-pomodoro org-mime org-download org-cliplink org-brain open-junk-file omnisharp nodejs-repl nameless mwim move-text magit-svn magit-section magit-gitflow macrostep lorem-ipsum livid-mode live-py-mode link-hint json-navigator json-mode js2-refactor js-doc indent-guide importmagic hybrid-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-rtags helm-pydoc helm-purpose helm-projectile helm-org-rifle helm-org helm-mode-manager helm-make helm-ls-git helm-gitignore helm-git-grep helm-flx helm-descbinds helm-company helm-cider helm-c-yasnippet helm-ag google-translate google-c-style golden-ratio gnuplot gitignore-templates gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy forge font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-org evil-numbers evil-nerd-commenter evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu emr elisp-slime-nav editorconfig dumb-jump dotenv-mode disaster dired-quick-sort diminish devdocs define-word cython-mode cpp-auto-include company-ycmd company-rtags company-c-headers company-anaconda column-enforce-mode clojure-snippets clean-aindent-mode cider-eval-sexp-fu centered-cursor-mode blacken auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line ac-ispell))
  '(python-shell-interpreter "/usr/local/bin/python3"))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
 )
