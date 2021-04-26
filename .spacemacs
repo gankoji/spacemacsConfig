@@ -36,7 +36,6 @@ values."
      clojure
      c-c++
      csharp
-     ;;deft
      emacs-lisp
      fsharp
      git
@@ -46,6 +45,7 @@ values."
      python
      themes-megapack
      windows-scripts
+     yaml
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -312,6 +312,8 @@ you should place your code here."
   (setq display-time-format "%a,%d %b %Y %H:%M:%S")
   (display-time-mode 1)
 
+  (load-file "~/.emacs.d/machineConfig.el")
+  (setq-default markdown-hide-markup t)
   (setq markdown-enable-wiki-links t)
   (setq markdown-link-space-sub-char " ")
   (setq markdown-fontify-code-blocks-natively t)
@@ -328,7 +330,6 @@ you should place your code here."
   ;;                                                   filename)) "]]")))
 
 
-  (setq vault "/Users/jbailey/Documents/slipbox/")
   (defun filename-in-vault (filename)
     (let* ((extensionless (file-name-sans-extension filename))
            (stripped (replace-regexp-in-string vault "" extensionless)))
@@ -347,15 +348,6 @@ you should place your code here."
       (rename-file (buffer-file-name) filename)
       ))
 
-  ;; This function automatically adds my vault files to the staging area
-  ;; commits them, and pushes to the remote
-  (defun commit-and-push-vault ()
-    (call-process-shell-command "cd /Users/jbailey/Documents/slipbox/; git add *;
-    git commit -m 'Vault update from spacemacs'; git push"))
-
-  ;; Run the above function on a timer (currently every 5 minutes, 2 minutes
-  ;; after start)
-  (run-at-time 2 300 'commit-and-push-vault)
   ;; Markdown-mode specific keybinds
   (with-eval-after-load 'markdown-mode
     (define-key markdown-mode-map (kbd "C-c i") 'insert-file-name-as-wikilink)
@@ -364,13 +356,7 @@ you should place your code here."
     (spacemacs/set-leader-keys "of" 'markdown-follow-thing-at-point)
     (spacemacs/set-leader-keys "or" 'rename-file-in-vault))
 
-  ;; Configuration for helm-deft
-  (load-file "~/.emacs.d/helm-deft.el")
-  (setq helm-deft-dir-list '("~/Documents/slipbox/"))
-  (setq helm-deft-extension "md")
-  (spacemacs/set-leader-keys "fd" 'helm-deft)
-
-  ;; Spacemacs has odd org interaction, due to two versions of org being used.
+    ;; Spacemacs has odd org interaction, due to two versions of org being used.
   ;; Thus, we have to make sure that our custom configuration is loaded after
   ;; org is completely loaded.
   (with-eval-after-load 'org-mode
@@ -456,6 +442,12 @@ This function is called at the very end of Spacemacs initialization."
  '(markdown-command "pandoc")
  '(markdown-hide-urls t)
  '(package-selected-packages
-   '(mmm-mode markdown-toc gh-md deft eglot-fsharp zenburn-theme zen-and-art-theme white-sand-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme seti-theme reverse-theme rebecca-theme railscasts-theme purple-haze-theme professional-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mustang-theme monokai-theme monochrome-theme molokai-theme moe-theme modus-vivendi-theme modus-operandi-theme modus-themes minimal-theme material-theme majapahit-theme madhat2r-theme lush-theme light-soap-theme kaolin-themes jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme farmhouse-theme eziam-theme exotica-theme espresso-theme dracula-theme doom-themes django-theme darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme chocolate-theme autothemer cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes afternoon-theme fsharp-mode yasnippet-snippets yapfify ws-butler writeroom-mode winum which-key web-beautify volatile-highlights vi-tilde-fringe uuidgen use-package unfill undo-tree treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection sphinx-doc spaceline-all-the-icons smeargle restart-emacs rainbow-delimiters pytest pyenv-mode py-isort prettier-js powershell popwin poetry pippel pipenv pip-requirements pcre2el password-generator paradox overseer orgit org-superstar org-rich-yank org-projectile org-present org-pomodoro org-mime org-download org-cliplink org-brain open-junk-file omnisharp nodejs-repl nameless mwim move-text magit-svn magit-section magit-gitflow macrostep lorem-ipsum livid-mode live-py-mode link-hint json-navigator json-mode js2-refactor js-doc indent-guide importmagic hybrid-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-rtags helm-pydoc helm-purpose helm-projectile helm-org-rifle helm-org helm-mode-manager helm-make helm-ls-git helm-gitignore helm-git-grep helm-flx helm-descbinds helm-company helm-cider helm-c-yasnippet helm-ag google-translate google-c-style golden-ratio gnuplot gitignore-templates gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy forge font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-org evil-numbers evil-nerd-commenter evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu emr elisp-slime-nav editorconfig dumb-jump dotenv-mode disaster dired-quick-sort diminish devdocs define-word cython-mode cpp-auto-include company-ycmd company-rtags company-c-headers company-anaconda column-enforce-mode clojure-snippets clean-aindent-mode cider-eval-sexp-fu centered-cursor-mode blacken auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line ac-ispell))
+   '(yaml-mode mmm-mode markdown-toc gh-md deft eglot-fsharp zenburn-theme zen-and-art-theme white-sand-theme underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme seti-theme reverse-theme rebecca-theme railscasts-theme purple-haze-theme professional-theme planet-theme phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mustang-theme monokai-theme monochrome-theme molokai-theme moe-theme modus-vivendi-theme modus-operandi-theme modus-themes minimal-theme material-theme majapahit-theme madhat2r-theme lush-theme light-soap-theme kaolin-themes jbeans-theme jazz-theme ir-black-theme inkpot-theme heroku-theme hemisu-theme hc-zenburn-theme gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme gandalf-theme flatui-theme flatland-theme farmhouse-theme eziam-theme exotica-theme espresso-theme dracula-theme doom-themes django-theme darktooth-theme darkokai-theme darkmine-theme darkburn-theme dakrone-theme cyberpunk-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme chocolate-theme autothemer cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme apropospriate-theme anti-zenburn-theme ample-zen-theme ample-theme alect-themes afternoon-theme fsharp-mode yasnippet-snippets yapfify ws-butler writeroom-mode winum which-key web-beautify volatile-highlights vi-tilde-fringe uuidgen use-package unfill undo-tree treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil toc-org symon symbol-overlay string-inflection sphinx-doc spaceline-all-the-icons smeargle restart-emacs rainbow-delimiters pytest pyenv-mode py-isort prettier-js powershell popwin poetry pippel pipenv pip-requirements pcre2el password-generator paradox overseer orgit org-superstar org-rich-yank org-projectile org-present org-pomodoro org-mime org-download org-cliplink org-brain open-junk-file omnisharp nodejs-repl nameless mwim move-text magit-svn magit-section magit-gitflow macrostep lorem-ipsum livid-mode live-py-mode link-hint json-navigator json-mode js2-refactor js-doc indent-guide importmagic hybrid-mode hungry-delete htmlize hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-rtags helm-pydoc helm-purpose helm-projectile helm-org-rifle helm-org helm-mode-manager helm-make helm-ls-git helm-gitignore helm-git-grep helm-flx helm-descbinds helm-company helm-cider helm-c-yasnippet helm-ag google-translate google-c-style golden-ratio gnuplot gitignore-templates gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy forge font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-org evil-numbers evil-nerd-commenter evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-easymotion evil-collection evil-cleverparens evil-args evil-anzu emr elisp-slime-nav editorconfig dumb-jump dotenv-mode disaster dired-quick-sort diminish devdocs define-word cython-mode cpp-auto-include company-ycmd company-rtags company-c-headers company-anaconda column-enforce-mode clojure-snippets clean-aindent-mode cider-eval-sexp-fu centered-cursor-mode blacken auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line ac-ispell))
  '(python-shell-interpreter "/usr/local/bin/python3"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
 )
