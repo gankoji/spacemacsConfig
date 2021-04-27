@@ -312,7 +312,10 @@ you should place your code here."
   (setq display-time-format "%a,%d %b %Y %H:%M:%S")
   (display-time-mode 1)
 
+  (load-file "~/.emacs.d/helm-deft.el")
   (load-file "~/.emacs.d/machineConfig.el")
+  ;; Configuration for helm-deft
+  (setq helm-deft-extension "md")
   (setq-default markdown-hide-markup t)
   (setq markdown-enable-wiki-links t)
   (setq markdown-link-space-sub-char " ")
@@ -354,6 +357,7 @@ you should place your code here."
     (spacemacs/declare-prefix "o" "jakes-menu")
     (spacemacs/set-leader-keys "ol" 'insert-file-name-as-wikilink)
     (spacemacs/set-leader-keys "of" 'markdown-follow-thing-at-point)
+    (spacemacs/set-leader-keys "fd" 'helm-deft)
     (spacemacs/set-leader-keys "or" 'rename-file-in-vault))
 
     ;; Spacemacs has odd org interaction, due to two versions of org being used.
